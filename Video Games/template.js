@@ -772,7 +772,7 @@ building.prototype.display = function(tint){
     }
 };
 timer.prototype.display = function(){
-    f = createFont("fantasy", 40);
+    f = createFont("impact", 40);
     textFont(f);
     fill(255, 255, 255);
     textSize(32);
@@ -1103,7 +1103,7 @@ draw = function() {
             }
             background(90, 90, 153);
             
-            f = createFont("fantasy", 50);
+            f = createFont("impact", 50);
             textFont(f);
             textSize(120);
             fill(245, 0, 143);
@@ -1229,7 +1229,7 @@ draw = function() {
         case 'faq':
             background(255, 255, 255);
             fill(0, 0, 0);
-            f = createFont("fantasy", 20);
+            f = createFont("impact", 20);
             textFont(f);
             text('By: Logan Eisenbeiser and Andrew Gamma', 5, 25);
             if((keys[ENTER] || keys[RETURN]) && !enterStill){
@@ -1243,7 +1243,7 @@ draw = function() {
             fill(255, 255, 255);
             rect(50,50,300,300);
             fill(0, 0, 0);
-            f = createFont("fantasy", 60);
+            f = createFont("impact", 60);
             textFont(f);
             if(menuSelect === 'play'){
                 if(!upStill && !downStill){
@@ -1416,7 +1416,7 @@ draw = function() {
         case 'instructions':
             background(255, 255, 255);
             fill(0, 0, 0);
-            f = createFont("fantasy", 20);
+            f = createFont("impact", 20);
             textFont(f);
             text('-Instructions (press enter to return) \n \n \t use the arrow keys to fly the ice cream truck. \n \t defeat the giant pikachu by popping \n \t the balloons with your sprinkles. \n \n \t watch out for the pikachu\'s attacks!', 5, 25);
             if((keys[ENTER] || keys[RETURN]) && !enterStill){
