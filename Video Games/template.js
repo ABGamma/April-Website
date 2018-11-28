@@ -1648,6 +1648,7 @@ draw = function() {
             fill(0, 0, 0);
             //f = createFont("fantasy", 60);
             //textFont(f);
+            textSize(50);
             if(menuSelect === 'easy'){
                 if(!upStill && !downStill){
                     if(keys[UP]){
