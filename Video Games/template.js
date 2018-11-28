@@ -7,10 +7,19 @@ angleMode = "radians";
 //This program is a game in which an icecream truck flys to avoid obstacles
 //By: Andrew Gamma
 
-//TODO: Update the hit boxes for the stars (now 40x40) 
-//TODO: modify the constant shooting to stop double toggling 
+//when checking damage on the truck, if "invincible == 1" prevent damage
 
-//Usage of the pikachu sprites: pikaBalloons[i] where 0 <= i < 15
+//Developer tools
+//press w to make the storm clouds appear
+//press i + o to instantly activate SUNDAE MODE
+//press l to increment the laser beams
+
+
+//Usage of the laser beams: set pikachuEnemy.laser to 0 for no lasers
+//set pikachuEnemy.laserActive to 1 to enable lasers, to 0 to disable 
+//set enemy.laser to 1 for a soft eye glow, increment to 2 and 3 to intensify
+//set enemy laser to 4 or higher to display the actual lasers 
+
 /*
 //i = 0 : all 7 balloons
 //i = 1 : 7 balloons, 1 puncture
@@ -33,11 +42,16 @@ angleMode = "radians";
 //Level 3: i goes from [0, 14]
 */
 
-//angleMode = "degrees";
+
 
 //Variables
 var bullets = [];
 var f;
+var randomStarAtk = random(60, 90);
+var frameCnt = 0;
+var cloudCount = 0;
+var myi = 0;
+var invCnt = 0;
 var stars = [];
 var trucks = [];
 var keys = [];
@@ -49,6 +63,17 @@ var pikaLight = [];
 var lightBallDraw = 0;
 var constant = 0;
 var a = random(1500);
+var cloudSize = 0;
+var cloudStart = 0;
+var bananaPowUp = 0;
+var cherryPowUp = 0;
+var sundae = 0;
+var setupDone = 0;
+var invincible = 0;
+var dispTrk = 0;
+var endGameCounter = 0;
+var lost = 0;
+var newLivesEnabled = 1;
 
 //pikachu
 
@@ -73,12 +98,14 @@ var pointsYel = [];var p2Yel = [];
 var pointsGreen = [];var p2Green = [];
 var pointsGreen2 = [];var p2Green2 = [];
 
+var banana = [];
+var cherry = [];
+
 var balloonCount = 0;
 
 
 var myTimer;
 var hitBox;
-var pikachuEnemy;
 var GameState = 'menu';
 var menuSelect = 'play';
 var upStill = 0;
@@ -86,7 +113,7 @@ var downStill = 0;
 var enterStill = 0;
 var playing = 0;
 var scrollingTitle = 400;
-var scrollingTitle2 = 1500;
+var scrollingTitle2 = 1600;
 
 
 //Pikachu Drawing Functions
@@ -117,9 +144,9 @@ var subdivide = function(points, p2) {
     splitPoints(points, p2);
     average(points, p2);  
 };
-var shapez = function(points, c1, c2, c3) {
+var shapez = function(points, c1, c2, c3, cz) {
 beginShape();
-fill(c1, c2, c3);
+fill(c1, c2, c3, cz);
 for (var i = 0; i < points.length; i++) {
     vertex(points[i].x, points[i].y);}
 vertex(points[0].x, points[0].y);
@@ -140,7 +167,35 @@ triangle(x-6, y, x-4, y+5, x-12, y+7);
 noStroke();
 };
 var createPoints = function() {
-    
+   
+cherry.push(new PVector(200, 180));
+cherry.push(new PVector(200, 180));
+cherry.push(new PVector(170, 170));
+cherry.push(new PVector(100, 250));
+cherry.push(new PVector(200, 350));
+cherry.push(new PVector(300, 250));
+cherry.push(new PVector(230, 170));
+cherry.push(new PVector(210, 190));
+cherry.push(new PVector(210, 190));
+cherry.push(new PVector(250, 70));
+cherry.push(new PVector(270, 50));
+cherry.push(new PVector(240, 70));
+subdivide(cherry, pP2);
+subdivide(cherry, pP2);
+subdivide(cherry, pP2);
+   
+   
+   
+banana.push(new PVector(50, 10));
+banana.push(new PVector(200, 210));
+banana.push(new PVector(390, 350));
+banana.push(new PVector(250, 330));
+banana.push(new PVector(100, 250));
+subdivide(banana, pP2);
+subdivide(banana, pP2);
+subdivide(banana, pP2);
+subdivide(banana, pP2);
+
 pointsBlue.push(new PVector(-10, 133));
 pointsBlue.push(new PVector(50, 183));
 pointsBlue.push(new PVector(50, 183));
@@ -429,14 +484,14 @@ subdivide(pp6, PP6);
 };
 pikachu();
 var pika2 = function() {
-shapez(pikaPoints, 250, 210, 34);
-shapez(pp2, 0, 0, 0);
-shapez(pp3, 0, 0, 0);
-shapez(pp4, 255, 0, 0);
-shapez(pp5, 84, 0, 0);
-shapez(pp55, 250, 135, 214);
+shapez(pikaPoints, 250, 210, 34, 255);
+shapez(pp2, 0, 0, 0, 255);
+shapez(pp3, 0, 0, 0, 255);
+shapez(pp4, 255, 0, 0, 255);
+shapez(pp5, 84, 0, 0, 255);
+shapez(pp55, 250, 135, 214, 255);
 if(balloonCount < 14){
-shapez(pp6, 0, 0, 0);
+shapez(pp6, 0, 0, 0, 255);
 fill(255, 255, 255);
 ellipse(49, 235, 7, 7);}
 else{fill(0, 0, 0);
@@ -541,8 +596,8 @@ fill(165, 207, 229);
 ellipse(41, 130, 80, 80);
 triangle(20, 164, 72, 155, 50, 190);    
 
-shapez(pointsBlue, 121, 171, 196);
-shapez(pointsBlue2, 206, 248, 255);
+shapez(pointsBlue, 121, 171, 196, 255);
+shapez(pointsBlue2, 206, 248, 255, 255);
 
 if(balloonCount === 3){
 puncture(40, 140, 206, 248, 255);}}
@@ -554,7 +609,7 @@ fill(200, 214, 205);
 ellipse(145, 120, 80, 80);
 triangle(120, 151, 176, 145, 150, 180);
 
-shapez(pointsGrey, 159, 168, 162);
+shapez(pointsGrey, 159, 168, 162, 255);
 
 if(balloonCount === 5) {
 puncture(135, 135, 250, 264, 255);}}
@@ -567,8 +622,8 @@ ellipse(90, 80, 100, 100);
 triangle(60, 120, 124, 117, 95, 160);
 quad(90, 155, 100, 155, 105, 162, 85, 162);
 
-shapez(pointsPink, 207, 153, 176);
-shapez(pointsPink2, 255, 216, 241);
+shapez(pointsPink, 207, 153, 176, 255);
+shapez(pointsPink2, 255, 216, 241, 255);
 if(balloonCount === 11){
 puncture(80, 80, 255, 216, 241);}}
 else{pointsPink = []; pointsPink2 = [];}
@@ -580,7 +635,7 @@ ellipse(190, 120, 80, 80);
 triangle(163, 150, 218, 149, 190, 180);
 quad(185, 175, 195, 175, 200, 182, 180, 179);
 
-shapez(pointsPur, 148, 135, 155);
+shapez(pointsPur, 148, 135, 155, 255);
 if(balloonCount ===7) {
 puncture(185, 140, 219, 193, 234);}}
 else {pointsPur = [];}
@@ -592,8 +647,8 @@ ellipse(255, 165, 80, 80);
 triangle(195+25, 133+50, 260+25, 137+55, 245, 170+55);
 quad(185+55, 175+45, 195+55, 175+45, 200+55, 182+45, 180+55, 179+45);
 
-shapez(pointsBrn, 172, 133, 84);
-shapez(pointsBrn2, 248, 192, 119);
+shapez(pointsBrn, 172, 133, 84, 255);
+shapez(pointsBrn2, 248, 192, 119, 255);
 
 if(balloonCount === 1) {
 puncture(260, 170, 248, 192, 119);
@@ -606,8 +661,8 @@ fill(230, 233, 82);
 ellipse(230, 100, 95, 95);
 triangle(195, 133, 260, 137, 220, 170);
 
-shapez(pointsYel2, 255, 255, 120);
-shapez(pointsYel, 194, 190, 95);
+shapez(pointsYel2, 255, 255, 120, 255);
+shapez(pointsYel, 194, 190, 95, 255);
 if(balloonCount === 9) {
 puncture(220, 110, 255, 255, 120);}}
 else {pointsYel = []; pointsYel2 = [];}
@@ -620,8 +675,8 @@ triangle(130, 108, 190, 107, 160, 140);
 quad(155, 135, 165, 135, 170, 142, 150, 142);
 color(72, 105, 0);
 
-shapez(pointsGreen, 128, 155, 96);
-shapez(pointsGreen2, 193, 235, 114);
+shapez(pointsGreen, 128, 155, 96, 255);
+shapez(pointsGreen2, 193, 235, 114, 255);
 if(balloonCount === 13) {
 puncture(150, 60, 193, 235, 114);}}
 else{pointsGreen = []; pointsGreen2 = [];}
@@ -647,6 +702,9 @@ var truckObj = function(x, y, s) {
     this.y = y;
     this.speed = s;
     this.lives = 3;
+    this.invincible = 0;
+    this.invincibleCnt = 0;
+    this. invincibleFrames = 120;
     
 };
 var timer = function(initMil){
@@ -678,12 +736,14 @@ var truckHitBox = function(x, y, w){
     this.y = y;
     this.w = w;
     this.h = w/1.5;
+    this.inv = 0;
 };
 var bullet = function(){
     this.x = 0;
     this.y = 0;
     this.shot = 0;
     this.vis = 1;
+    this.flaming = 0;
     var c = floor(random(0, 12));
     switch(c) {
         case 0: this.c1 = 255;
@@ -741,74 +801,41 @@ var bullet = function(){
     }
     
 };
+var bananaObj = function(x, y) {
+    this.x = x;
+    this.y = y;
+    this.collected = 0;
+};
+var cherryObj = function(x, y) {
+    this.x = x;
+    this.y = y;
+    this.collected = 0;
+};
+var newLifeObj = function(x, y) {
+    this.x = x;
+    this.y = y;
+    this.collected = 0;
+};
 
 var enemy = function(x, y, z){
     this.x = x;
     this.y = y;
     this.frame = z;
     this.starthp = 400;
+    this.curHp = 400;
     this.hp = 0;
     this.difficulty = 15;
     this.dir = 1;
+    this.laser = 0;
+    this.laserActive = 0;
 };
 
+var makeTruck = function() {
+this.x = 200;
+this.y = 200;
+background(0, 0, 0, 0);
+// Ice Cream Truck with A as cone and E as service area
 
-//Object display functions
-truckHitBox.prototype.display = function(){
-    noFill();
-    noStroke();
-    rect(this.x, this.y, this.w, this.h);
-};
-building.prototype.display = function(tint){
-    stroke(0, 0, 0,tint);
-    strokeWeight(3);
-    fill(this.r, this.g, this.b, tint);
-    rect(this.x, this.y, this.w, 700);
-    fill(176, 176, 176, tint);
-    for(var i = this.y; i < 700; i+= 5 + this.w/this.windows*1.5){
-        for(var j = this.x; j < (this.x + this.w - (this.w/3)); j += this.w/5){
-            rect(j + 10, i + 10, (this.w/3 - 20), this.w/this.windows*1.5);
-        }
-    }
-};
-timer.prototype.display = function(){
-    f = createFont("Sans-Serif-Bold", 40);
-    textFont(f);
-    fill(255, 255, 255);
-    textSize(32);
-    this.currentTime += millis()-this.zero;
-    this.zero = millis();
-    text(floor((this.currentTime)/1000), 200,50);
-};
-bullet.prototype.display = function(){
-    if(this.vis === 1){
-        fill(this.c1, this.c2, this.c3);
-        noStroke();
-        //stroke(0, 0, 0);
-        rect(this.x, this.y, 10,3, 1);
-        stroke(0, 0, 0);
-    }
-};
-starObj.prototype.display = function() {
-    fill(255, 242, 0);
-    stroke(255, 255, 0);
-    if(lightBallDraw > 9){
-    image(pikaLight[floor(this.frame/3)], this.x, this.y, 40, 40);}
-};
-truckObj.prototype.display = function() {
-    // Ice Cream Truck with A as cone and E as service area
-    //wheels
-    fill(153, 153, 153);
-    strokeWeight(9);
-    stroke(0, 0, 0);
-    ellipse(this.x,this.y,30,30);
-    ellipse(this.x + 90,this.y,30,30);
-    fill(217, 217, 217);
-    noStroke();
-    
-    //body
-    rect(this.x + 15,this.y - 50,105,50);
-    rect(this.x - 30, this.y - 25,50,25);
     fill(255, 3, 175);
     
     //icecream
@@ -845,6 +872,22 @@ truckObj.prototype.display = function() {
     line(this.x + 30,this.y - 105,this.x + 120,this.y - 60);
     line(this.x + 120,this.y - 60,this.x + 20,this.y - 60);
     line(this.x + 66,this.y - 85,this.x + 60,this.y - 60);
+    
+    
+    pikaBalloons.push(get(150, 50, 200, 100));
+    
+    //wheels
+    fill(153, 153, 153);
+    strokeWeight(9);
+    stroke(0, 0, 0);
+    ellipse(this.x,this.y,30,30);
+    ellipse(this.x + 90,this.y,30,30);
+    fill(217, 217, 217);
+    noStroke();
+    
+    //body
+    rect(this.x + 15,this.y - 50,105,50);
+    rect(this.x - 30, this.y - 25,50,25);
     
     //Sevice Area
     noStroke();
@@ -889,11 +932,126 @@ truckObj.prototype.display = function() {
     line(this.x + 40,this.y - 45,this.x + 65,this.y - 45);
     line(this.x + 40,this.y - 5,this.x + 65,this.y - 5);
     line(this.x + 40,this.y - 25,this.x + 60,this.y - 25);
+    
+    pikaBalloons.push(get(150, 50, 200, 200));
+};
+
+//Object display functions
+truckHitBox.prototype.display = function(){
+    noFill();
+    //fill(255, 0, 0);
+    noStroke();
+    rect(this.x, this.y, this.w, this.h);
+};
+building.prototype.display = function(tint){
+    stroke(0, 0, 0,tint);
+    strokeWeight(3);
+    fill(this.r, this.g, this.b, tint);
+    rect(this.x, this.y, this.w, 700);
+    fill(176, 176, 176, tint);
+    for(var i = this.y; i < 700; i+= 5 + this.w/this.windows*1.5){
+        for(var j = this.x; j < (this.x + this.w - (this.w/3)); j += this.w/5){
+            rect(j + 10, i + 10, (this.w/3 - 20), this.w/this.windows*1.5);
+        }
+    }
+};
+timer.prototype.display = function(){
+    //f = createFont("fantasy", 40);
+    //textFont(f);
+    fill(255, 255, 255);
+    textSize(32);
+    this.currentTime += millis()-this.zero;
+    this.zero = millis();
+    text(floor((this.currentTime)/1000), 200,50);
+};
+bullet.prototype.display = function(){
+    if(this.vis === 1){
+        
+        if(sundae > 0 && sundae < 50){
+            noStroke();
+                fill(0, 255, 200, 100);
+                ellipse(this.x+5, this.y+1.5, 15, 15);
+            
+        }
+        fill(this.c1, this.c2, this.c3);
+        noStroke();
+        //stroke(0, 0, 0);
+        rect(this.x, this.y, 10,3, 1);
+        stroke(0, 0, 0);
+    }
+};
+starObj.prototype.display = function() {
+    fill(255, 242, 0);
+    stroke(255, 255, 0);
+    if(lightBallDraw > 9){
+    image(pikaLight[floor(this.frame/3)], this.x, this.y, 40, 40);}
+};
+truckObj.prototype.display = function() {
+    if(hitBox.inv ===  1){
+        dispTrk++;
+        if(dispTrk > 15){
+            dispTrk = 0;
+        }
+    }
+    else{
+        dispTrk = 0;
+    }
+    //sho the power up if the sundae is active
+    if(keys.o && keys.i){
+        sundae = 49;
+    }
+    if(sundae > 0 && sundae < 50){
+        image(pikaBalloons[20], this.x-140, this.y-220, 400, 400);
+    }
+    if(setupDone){
+        if(dispTrk < 10){
+            image(pikaBalloons[22], this.x-50, this.y-150, 200, 200);
+        }
+        
+    }
+    
 };
 enemy.prototype.display = function() {
     if(this.frame < 15){
-    image(pikaBalloons[this.frame], this.x, this.y, 200, 200);}
+    image(pikaBalloons[this.frame], this.x, this.y, 200, 200);
     
+        if(this.laser > 0 && this.laserActive){
+            image(pikaBalloons[15], this.x, this.y, 200, 200);
+        }
+        if(this.laser > 1 && this.laserActive){
+            image(pikaBalloons[15], this.x, this.y, 200, 200);
+        }
+        if(this.laser > 2 && this.laserActive) {
+            image(pikaBalloons[15], this.x, this.y, 200, 200);
+        }
+        if(this.laser > 3 && this.laserActive){
+            fill(255, 0, 0);
+            noStroke();
+            rect(this.x+43, this.y+114, -350, 3);
+            rect(this.x+24, this.y+118, -350, 3);
+            fill(255, 255, 255, 200);
+            rect(this.x+43, this.y+115, -350, 1);
+            rect(this.x+24, this.y+119, -350, 1);
+        }
+    }
+    
+    
+    
+};
+bananaObj.prototype.display = function() {
+    if (!this.collected) {
+        image(pikaBalloons[17], this.x, this.y, 50, 50);
+    } 
+};
+cherryObj.prototype.display = function() {
+    if (!this.collected) {
+        image(pikaBalloons[19], this.x, this.y, 40, 40);
+    } 
+};
+newLifeObj.prototype.display = function() {
+    if (!this.collected) {
+        image(pikaBalloons[21], this.x, this.y, 80, 40);
+    } 
 };
 
 
@@ -902,8 +1060,6 @@ starObj.prototype.draw = function() {
     this.move();
     this.display();
 };
-
-
 //Move Functions
 bullet.prototype.move = function(){
     this.x += 7;
@@ -963,7 +1119,6 @@ enemy.prototype.move = function() {
     this.x --;
     if(this.x < -200) {this.x = 400; this.frame++;}
 };
-
 enemy.prototype.gameMove = function(){
     this.y += this.dir;
     if(this.y > 200){
@@ -971,6 +1126,39 @@ enemy.prototype.gameMove = function(){
     }
     if(this.y < 0){
         this.dir = 1;
+    }
+};
+bananaObj.prototype.move = function() {
+    this.x -= 1;
+    this.y += random(-1, 1);
+    if(this.x < -100 && !this.collected){
+        this.x = random(500, 800);
+        this.y = random(50, 350);
+    }
+};
+cherryObj.prototype.move = function() {
+    if (bananaPowUp){
+    this.x -= 1;
+    this.y += random(-1, 1);
+    if(this.x < -100 && !this.collected){
+        this.x = random(500, 800);
+        this.y = random(50, 350);
+    }
+    }
+};
+newLifeObj.prototype.move = function() {
+    if(this.collected){
+        this.collected = 0;
+        this.x = -1000;
+    }
+    if(newLivesEnabled){
+    this.x -= 1;
+    }
+    this.y += random(-1, 1);
+    if(this.x < -100){
+        this.x = random(800, 1200);
+        this.y = random(50, 350);
+    
     }
 };
 
@@ -990,9 +1178,22 @@ for(var i = 0; i < 5; i++){
 trucks.push(new truckObj(-126, 300, 8));
 myTimer = new timer(millis());
 hitBox = new truckHitBox(0, 110, 70);
-pikachuEnemy = new enemy(400, 200, 0);
+var pikachuEnemy = new enemy(400, 200, 0);
+var bananaPow = new bananaObj(random(500, 800), random(50, 350));
+var cherryPow = new cherryObj(random(500, 800), random(50, 350));
+var newLife = new newLifeObj(random(800, 1200), random(50, 350));
+var fruitReset = function() {
 
-
+    cherryPowUp = 0;
+    bananaPowUp = 0;
+    bananaPow.collected = 0;
+    cherryPow.collected = 0;
+    bananaPow.x = random(500, 800);
+    bananaPow.y = random(50, 350);
+    cherryPow.x = random(500, 800);
+    cherryPow.y = random(50, 350);
+    sundae = 0;
+};
 
 //Timer play function
 timer.prototype.play = function(){
@@ -1000,39 +1201,103 @@ timer.prototype.play = function(){
 };
 
 
-
-
 //reset game function
 var reset = function(){
     trucks[0] = new truckObj(-126, 300, 8);
     hitBox = new truckHitBox(0, 110, 70);
     stars = [];
+    bullets = [];
+    lost = 0;
+    menuSelect='play';
+    fruitReset();
+    newLife.x = random(800, 1200);
+    newLife.y = random(50, 350);
+    cloudStart = 0;
+    cloudSize = 0;
+    pikachuEnemy.laser = 0;
     myTimer = new timer(millis());
     for(var i = 0; i < 5; i++){
         fill(255, 221, 0);
         stroke(255, 221, 0);
         stars.push(new starObj(random(410, 800), random(0,400), random(1,2), random(2,3)));
     }
+    for(var i = 0; i < 30; i++){
+    bullets.push(new bullet());
+    }
 };
 
 
 //Collision detection functions
 truckHitBox.prototype.collisions = function(){
-    for(var i = 0; i < stars.length; i++){
-        if(stars[i].x > this.x && stars[i].x < this.x + this.w && stars[i].y > this.y && stars[i].y < this.y + this.h){
+    //only check for collisions if the power up is not active
+    if(!invincible){
+    if(this.inv === 0){ 
+        if(this.x + this.w > pikachuEnemy.x + 15 && this.x < pikachuEnemy.x + 200 && this.y + this.h > pikachuEnemy.y && this.y + 15 < pikachuEnemy.y + 185){
             trucks[0].lives += -1;
-            if(trucks[0].lives < 1){
-                trucks[0].lives = 3;
-                playing = 0;
-                GameState = 'menu';
-                pikachuEnemy.frame = 0;
-            }
-            stars[i].vis = 0;
-            //reset();
+            this.inv = 1;
         }
+        if(pikachuEnemy.laser === 4 && pikachuEnemy.laserActive){
+            if(this.y + this.h > pikachuEnemy.y + 114 && this.y < pikachuEnemy.y + 118){
+                trucks[0].lives += -1;
+                this.inv = 1;
+            }
+        }
+        for(var i = 0; i < stars.length; i++){
+            if(stars[i].x > this.x && stars[i].x < this.x + this.w && stars[i].y > this.y && stars[i].y < this.y + this.h){
+                trucks[0].lives += -1;
+                this.inv = 1;
+                stars[i].vis = 0;
+                //reset();
+            }
+        }
+        if(trucks[0].lives < 1 && playing === 1){
+            
+            text("You Lost!", 200, 200);
+            endGameCounter++;
+            lost = 1;
+            if(endGameCounter > 200){
+                playing = 0;
+                lost = 0;
+            trucks[0].lives = 3;
+            GameState = 'menu';
+            pikachuEnemy.frame = 0;
+            endGameCounter = 0;
+            }
+            
+            this.inv = 0;
+        }
+        
+    }
+    else{
+        invCnt++;
+        if(invCnt > 120){
+            invCnt = 0;
+            this.inv = 0;
+        }
+    }
     }
 };
 
+var redEye = function() {
+	background(0, 0, 0, 0);
+	noStroke();
+    var pp10 = [];
+    pp10.push(new PVector(50, 225));
+pp10.push(new PVector(55, 240));
+pp10.push(new PVector(45, 250));
+pp10.push(new PVector(40, 240));
+subdivide(pp10, PP6);
+subdivide(pp10, PP6);
+subdivide(pp10, PP6);
+    shapez(pp10, 255, 0, 0, 100);
+ellipse(85, 230, 15, 15);
+    fill(255, 0, 0, 150);
+     
+ellipse(49, 235, 7, 7);
+ellipse(82, 227, 7, 7);
+pikaBalloons.push(get(0,0,width,height));
+balloonCount++;
+};
 var drawLight = function() {
     noStroke();
     background(0, 0, 0, 0);
@@ -1057,21 +1322,137 @@ var drawLight = function() {
 };
 
 bullet.prototype.collision = function(){
-    var hpBlockCount = pikachuEnemy.starthp/pikachuEnemy.difficulty;
+    var hpBlockCount = pikachuEnemy.starthp/pikachuEnemy.difficulty - 1;
     if(this.x <= pikachuEnemy.x + 180 && this.x >= pikachuEnemy.x + 40 && this.y <= pikachuEnemy.y + 180 && this.y >= pikachuEnemy.y + 20){
+        pikachuEnemy.curHp--;
         pikachuEnemy.hp++;
         if(pikachuEnemy.hp >= hpBlockCount){
             pikachuEnemy.frame += 1;
             pikachuEnemy.hp = 0;
         }
         this.vis = 0;
+        if(pikachuEnemy.curHp <= 0 && !lost){
+            playing = 0;
+            text("You Won!", 200, 200);
+            endGameCounter++;
+            if(endGameCounter > 200){
+                
+            trucks[0].lives = 3;
+            GameState = 'menu';
+            pikachuEnemy.frame = 0;
+            endGameCounter = 0;
+            }
+            hitBox.inv = 0;
+        }
     }
 };
 var randomStarAtk = random(60, 90);
 var frameCnt = 0;
 var myi = 0;
+
+var cloud = function() {
+    noStroke();
+    
+    cloudSize += 0.1;
+    if(cloudSize < 10){
+    
+        fill(15*(10-cloudSize), 15*(10-cloudSize), 15*(10-cloudSize), 100);
+        
+        for (var i = -10; i < 10; i ++) {
+            ellipse(120+(i*cloudSize), 0, 50, 50);
+        }
+    }
+    else {
+        fill(250, 250, 250);
+        if(cloudSize > 15 && cloudSize < 20){
+            if(hitBox.inv === 0){
+                if(hitBox.x + hitBox.w > 40 && hitBox.x < 50 && !invincible){
+                    trucks[0].lives--;
+                    hitBox.inv = 1;
+                    
+                }
+            }
+            rect(40, 10, 10, 400);
+            fill(255, 251, 43, 200);
+            rect(42, 10, 6, 400);
+            for(var k = 0; k < 40; k++){
+                fill(255, 251, 43);
+                quad(40-random(0, 10), 10+10*k, 45, 10+10*k-random(-10+10), 50+random(0, 10), 10+10*k, 45, 10+10*k+random(-10, 10));
+                fill(252, 244, 138);
+                quad(40-random(0, 5), 10+10*k, 45, 10+10*k+random(-10, 10), 50+random(0, 5), 10+10*k, 45, 10+10*k+random(-10, 10));
+            }
+        }
+        if(cloudSize > 20 && cloudSize < 25){
+            if(hitBox.inv === 0){
+                if(hitBox.x + hitBox.w > 140 + 40 && hitBox.x < 140 + 50 && !invincible){
+                    trucks[0].lives--;
+                    hitBox.inv = 1;
+                }
+            }
+            rect(140+40, 10, 10, 400);
+            fill(255, 251, 43, 200);
+            rect(140+42, 10, 6, 400);
+            for(var k = 0; k < 40; k++){
+                fill(255, 251, 43);
+                quad(180-random(0, 10), 10+10*k, 185, 10+10*k+random(-10, 10), 190+random(0, 10), 10+10*k, 185, 10+10*k+random(-10, 10));
+                fill(252, 244, 138);
+                quad(180-random(0, 5), 10+10*k, 185, 10+10*k+random(-10, 10), 190+random(0, 5), 10+10*k, 185, 10+10*k+random(-10, 10));
+            }
+        }
+        if(cloudSize > 25){
+            if(hitBox.inv === 0){
+                if(hitBox.x + hitBox.w > 110 && hitBox.x < 120 && !invincible){
+                    trucks[0].lives--;
+                    hitBox.inv = 1;
+                }
+            }
+            rect(110, 10, 10, 400);
+            fill(255, 251, 43, 200);
+            rect(112, 10, 6, 400);
+            for(var k = 0; k < 40; k++){
+                fill(255, 251, 43);
+                quad(110-random(0, 10), 10+10*k,115, 10+10*k+random(-10, 10), 120+random(0, 10), 10+10*k, 115, 10+10*k+random(-10, 10));
+                fill(252, 244, 138);
+                quad(110-random(0, 5), 10+10*k, 115, 10+10*k+random(-10, 10),120+random(0, 5), 10+10*k, 115, 10+10*k+random(-10, 10));
+            }
+        }
+        if(cloudSize > 30){
+            cloudStart = 0;
+            cloudSize = 0;
+        }
+        
+        fill(50, 50, 50);
+        for (var i = -10; i < 10; i ++) {
+            ellipse(120+(i*10), 0, 50, 50);
+        }
+        fill(255, 251, 43);
+        var tx = random(10, 210);
+        var ty = random(10, 15);
+        triangle(tx+random(-10, 10), ty+random(-10, 10),tx+random(-10, 10), ty+random(-10, 10),tx+random(-10, 10), ty+random(-10, 10));
+        
+       
+    }
+    
+    
+    
+};
+
+var CPressed = 0;
+var waitLaser = 60;
+var laserCnt = 0;
+var laser1Cnt = 0;
+var laser2Cnt = 0;
+var laser3Cnt = 0;
+var laser4Cnt = 0;
+
 //Main draw function contains most of the logic and state machines
 draw = function() {
+    
+    
+    if(lightBallDraw < 10){
+                drawLight();
+                lightBallDraw++;
+            }
     if(balloonCount < 15) {
         background(0, 0, 0, 0);
         balloons();
@@ -1080,7 +1461,35 @@ draw = function() {
         pikaBalloons.push(get(0,0,width,height));
         balloonCount++;
     }
+    else if(balloonCount === 15){
+        balloonCount++;
+        redEye();
+        noStroke();
+        background(0, 0, 0, 0);
+        shapez(banana, 157, 157, 157, 200);
+        pikaBalloons.push(get(0,0,width,height));
+        shapez(banana, 255, 255, 0, 255);
+        pikaBalloons.push(get(0,0,width,height));
+        background(0, 0, 0, 0);
+        shapez(cherry, 157, 157, 157, 200);
+        pikaBalloons.push(get(0,0,width, height));
+        shapez(cherry, 255, 50, 50, 255);
+        pikaBalloons.push(get(0,0,width, height));
+        background(0, 0, 0, 0);
+        
+       
+    for(var i = 0; i < 256; i++){
+    
+        fill(0, 255, 255-i, 5);
+        ellipse(200, 200, 255-i, 255-i);
+    }
+    pikaBalloons.push(get(0, 0, width, height));
+         
+        makeTruck();
+        setupDone = 1;
+    }
     else{
+        
         background(0, 0, 0, 0);
     pikaPoints = []; pP2 = [];
     pp2 = []; PP2 = [];
@@ -1088,45 +1497,55 @@ draw = function() {
     pp4 = []; PP4 = []; pp5 = []; PP5 = [];
     pp55 = []; PP55 = [];
     pp6 = []; PP6 = [];
+    banana = [];
+    cherry = [];
     }
+    
+    if(sundae > 0 && sundae < 50) {
+        sundae -=1/6;
+        invincible = 1;
+    }
+    else if(sundae < 0){
+        fruitReset();
+        invincible = 0;
+    }
+    
     
     if(!keys[ENTER] && !keys[RETURN]){
         enterStill = 0;    
     }
+    
     //State machine for major parts of game
     switch(GameState){
         //Menu case
         case 'menu':
-            if(lightBallDraw < 10){
-                drawLight();
-                lightBallDraw++;
-            }
+            var menu = function() {
             background(90, 90, 153);
             
-            f = createFont("Sans-Serif-Bold", 50);
-            textFont(f);
+            //f = createFont("fantasy", 50);
+            //textFont(f);
             textSize(120);
             fill(245, 0, 143);
             text("Ryan's Big Adventure", scrollingTitle, 120);            
             text("Ryan's Big Adventure", scrollingTitle2, 120);
-
             scrollingTitle-=1.5;
             scrollingTitle2 -=1.5;
-            if(scrollingTitle < -1100) {
-                scrollingTitle = 1100;}
-            if(scrollingTitle2 < -1100) {
-                scrollingTitle2 = 1100;
+            if(scrollingTitle < -1200) {
+                scrollingTitle = 1200;}
+            if(scrollingTitle2 < -1200) {
+                scrollingTitle2 = 1200;
             }
             
             trucks[0].x = 150;
             trucks[0].y = 125;
             trucks[0].display();
             
-            if(balloonCount > 14){
+            if(balloonCount > 15){
                 pikachuEnemy.display();
                 pikachuEnemy.move();
+                
+               
             }
-            
             
             textSize(50);
             for(var i = 0; i < stars.length; i++){
@@ -1154,7 +1573,7 @@ draw = function() {
             else{
                 fill(255, 255, 0);
             }
-            text('PLAY', 160,200);
+            text('PLAY', 140,200);
             if(menuSelect === 'instructions'){
                 if(!upStill && !downStill){
                     if(keys[UP]){
@@ -1177,7 +1596,7 @@ draw = function() {
             else{
                 fill(255, 255, 0);
             }
-            text('INSTRUCTIONS', 60, 250);
+            text('INSTRUCTIONS', 20, 250);
             if(menuSelect === 'credits'){
                 if(!upStill && !downStill){
                     if(keys[UP]){
@@ -1200,19 +1619,15 @@ draw = function() {
             else{
                 fill(255, 255, 0);
             }
-            text('CREDITS', 120, 300);
+            text('CREDITS', 85, 300);
+            };
+            menu();
             if((keys[ENTER] || keys[RETURN]) && !enterStill){
                 enterStill = 1;
                 switch(menuSelect){
                     case 'play':
-                        GameState = 'play';
-                        playing = 1;
-                        reset();
-                        pikachuEnemy.frame = 0;
-                        pikachuEnemy.starthp = 2000;
-                        pikachuEnemy.x = 270;
-                        pikachuEnemy.y = 100;
-                        trucks[0] = (new truckObj(-126, 300, 8));
+                        GameState = 'difficulty';
+                        menuSelect = 'easy';
                         break;
                     case 'instructions':
                         GameState = 'instructions';
@@ -1225,12 +1640,132 @@ draw = function() {
             
             break;
             
+        //Difficulty Case
+        case 'difficulty':
+            background(94, 92, 161);
+            fill(94, 92, 161);
+            rect(50,50,300,300);
+            fill(0, 0, 0);
+            //f = createFont("fantasy", 60);
+            //textFont(f);
+            if(menuSelect === 'easy'){
+                if(!upStill && !downStill){
+                    if(keys[UP]){
+                        menuSelect = 'hard';
+                        upStill = 1;
+                    }
+                    if(keys[DOWN]){
+                        menuSelect = 'medium'; 
+                        downStill = 1;
+                    }
+                }
+                if(!keys[UP]){
+                    upStill = 0;
+                }
+                if(!keys[DOWN]){
+                    downStill = 0;
+                }
+                fill(0, 255, 81);
+            }
+            else{
+                fill(255, 255, 0);
+            }
+            text('EASY', 140,150);
+            if(menuSelect === 'medium'){
+                if(!upStill && !downStill){
+                    if(keys[UP]){
+                        menuSelect = 'easy';
+                        upStill = 1;
+                    }
+                    if(keys[DOWN]){
+                        menuSelect = 'hard';  
+                        downStill = 1;
+                    }
+                }
+                if(!keys[UP]){
+                    upStill = 0;
+                }
+                if(!keys[DOWN]){
+                    downStill = 0;
+                }
+                fill(0, 255, 81);
+            }
+            else{
+                fill(255, 255, 0);
+            }
+            text('MEDIUM', 100, 200);
+            if(menuSelect === 'hard'){
+                if(!upStill && !downStill){
+                    if(keys[UP]){
+                        menuSelect = 'medium';
+                        upStill = 1;
+                    }
+                    if(keys[DOWN]){
+                        menuSelect = 'easy';  
+                        downStill = 1;
+                    }
+                }
+                if(!keys[UP]){
+                    upStill = 0;
+                }
+                if(!keys[DOWN]){
+                    downStill = 0;
+                }
+                fill(0, 255, 81);
+            }
+            else{
+                fill(255, 255, 0);
+            }
+            text('HARD', 135, 250);
+            if((keys[ENTER] || keys[RETURN]) && !enterStill){
+                enterStill = 1;
+                switch(menuSelect){
+                    case 'easy':
+                        GameState = 'play';
+                        playing = 1;
+                        reset();
+                        pikachuEnemy.frame = 0;
+                        pikachuEnemy.starthp = 2000;
+                        pikachuEnemy.curHp = 2000;
+                        pikachuEnemy.x = 270;
+                        pikachuEnemy.y = 100;
+                        trucks[0] = (new truckObj(-126, 300, 8));
+                        newLivesEnabled = 1;
+                        break;
+                    case 'medium':
+                        GameState = 'play';
+                        playing = 1;
+                        reset();
+                        pikachuEnemy.frame = 0;
+                        pikachuEnemy.starthp = 4000;
+                        pikachuEnemy.curHp = 4000;
+                        pikachuEnemy.x = 270;
+                        pikachuEnemy.y = 100;
+                        trucks[0] = (new truckObj(-126, 300, 8));
+                        newLivesEnabled = 1;
+                        break;
+                    case 'hard':
+                        GameState = 'play';
+                        playing = 1;
+                        reset();
+                        pikachuEnemy.frame = 0;
+                        pikachuEnemy.starthp = 4000;
+                        pikachuEnemy.curHp = 4000;
+                        pikachuEnemy.x = 270;
+                        pikachuEnemy.y = 100;
+                        trucks[0] = (new truckObj(-126, 300, 8));
+                        newLivesEnabled = 0;
+                        break;
+                }
+            }
+            break;
         //FAQ or help case
         case 'faq':
             background(255, 255, 255);
             fill(0, 0, 0);
-            f = createFont("Sans-Serif-Bold", 20);
-            textFont(f);
+            //f = createFont("fantasy", 20);
+            //textFont(f);
+            textSize(18);
             text('By: Logan Eisenbeiser and Andrew Gamma', 5, 25);
             if((keys[ENTER] || keys[RETURN]) && !enterStill){
                 enterStill = 1;
@@ -1240,11 +1775,13 @@ draw = function() {
         
         //Pause case    
         case 'pause':
-            fill(255, 255, 255);
+            background(94, 92, 161);
+            var pause = function() {
+            fill(94, 92, 161);
             rect(50,50,300,300);
             fill(0, 0, 0);
-            f = createFont("Sans-Serif-Bold", 60);
-            textFont(f);
+            //f = createFont("fantasy", 60);
+            //textFont(f);
             if(menuSelect === 'play'){
                 if(!upStill && !downStill){
                     if(keys[UP]){
@@ -1267,6 +1804,7 @@ draw = function() {
             else{
                 fill(255, 255, 0);
             }
+            textSize(50);
             text('PLAY', 145,150);
             if(menuSelect === 'instructions'){
                 if(!upStill && !downStill){
@@ -1320,7 +1858,7 @@ draw = function() {
                     case 'play':
                         GameState = 'play';
                         myTimer.play();
-                        trucks[0] = (new truckObj(-126, 300, 8));
+                        //trucks[0] = (new truckObj(-126, 300, 8));
                         break;
                     case 'instructions':
                         GameState = 'instructions';
@@ -1329,32 +1867,87 @@ draw = function() {
                         playing = 0;
                         GameState = 'menu';
                         menuSelect = 'play'; 
+                        hitBox.inv = 0;
                         break;
                 }
             }
+            };
+            pause();
             break;
             
         //Play case
         case 'play':
             frameCnt++;
+            cloudCount++;
+            laserCnt++;
             if(keys.p){
                 GameState = 'pause';
+                menuSelect = 'play';
             }
-            if(keys.c) {
+            if(keys.c && !CPressed) {
                 constant = !constant;
+                CPressed = 1;
             }
+            if(keys.l && !CPressed) {
+                pikachuEnemy.laser++;
+                pikachuEnemy.laserActive = 1;
+                if(pikachuEnemy.laser > 4){
+                    pikachuEnemy.laser = 0;
+                }
+                CPressed = 1;
+            }
+            if(keys.w) {
+                cloudStart = 1;
+            }
+            if(keys.x && sundae === 50 &&!lost) {
+                sundae -= 1/7;
+            }
+            
+            //draw background and buildings
             background(94, 92, 161);
             for(var i = 0; i < buildings.length; i++){
                 buildings[i].move();
                 buildings[i].display();
             }
+            //draw empty power ups
+            pushMatrix();
+            rotate(-PI/4);
+            translate(160, 190);
+            if(bananaPowUp){
+                image(pikaBalloons[17], 50, 50, 50, 50);
+            }
+            else{
+                image(pikaBalloons[16], 50, 50, 50, 50);}
+            popMatrix();
+            if(cherryPowUp){
+                
+                image(pikaBalloons[19], 335, -10, 40, 40);
+            }
+            else{
+            image(pikaBalloons[18], 335, -10, 40, 40);}
+            
+            bananaPow.move();
+            bananaPow.display();
+            cherryPow.move();
+            cherryPow.display();
+            newLife.move();
+            newLife.display();
+            
+            //bar to show power up
+            noStroke();
+            fill(157, 157, 157, 200);
+            rect(223, 13, 104, 14, 5);
+            
+            fill(0, 255, 128);
+            rect(225, 15, sundae*2, 10, 5);
+            
             
             pikachuEnemy.display();
             pikachuEnemy.gameMove();
-            myTimer.display();
+            //myTimer.display();
             hitBox.display();
             if(frameCnt > randomStarAtk){
-                randomStarAtk = random(60, 90);
+                randomStarAtk = random(90, 120);
                 frameCnt = 0;
                 stars[myi].vis = 1;
                 stars[myi].x = pikachuEnemy.x;
@@ -1372,6 +1965,41 @@ draw = function() {
                     stars[i].x = -200;
                 }
             }
+            if(pikachuEnemy.curHp < pikachuEnemy.starthp*0.45){
+                if(cloudCount % 480 === 0){
+                    cloudStart = 1;
+                }
+               //TODO: add in the thunder cloud
+            }
+            if(pikachuEnemy.curHp < pikachuEnemy.starthp*0.75){
+                if(waitLaser < laserCnt){
+                    pikachuEnemy.laser = 1;
+                    pikachuEnemy.laserActive = 1;
+                    laser1Cnt++;
+                    if(laser1Cnt > 10){
+                        pikachuEnemy.laser = 2;
+                        laser2Cnt++;
+                        if(laser2Cnt > 10){
+                            pikachuEnemy.laser = 3;
+                            laser3Cnt++;
+                            if(laser3Cnt > 10){
+                                pikachuEnemy.laser = 4;
+                                laser4Cnt++;
+                                if(laser4Cnt > 120){
+                                    laserCnt = 0;
+                                    laser1Cnt = 0;
+                                    laser2Cnt = 0;
+                                    laser3Cnt = 0;
+                                    laser4Cnt = 0;
+                                    waitLaser = random(120,240);
+                                    pikachuEnemy.laser = 0;
+                                    pikachuEnemy.laserActive = 0;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             pushMatrix();
             
             FrameCount++;
@@ -1382,16 +2010,35 @@ draw = function() {
                     bullets[i].display();
                 }
             }
-            if(keys[UP]){
+            
+            //check power up collisions
+            if(bananaPow.x < hitBox.x + hitBox.w/2 && bananaPow.x > hitBox.x - hitBox.w/2 && bananaPow.y < hitBox.y + hitBox.h/2 && bananaPow.y > hitBox.y - hitBox.h/2){
+                bananaPowUp = 1;
+                bananaPow.collected = 1;
+            }
+            else if(cherryPow.x < hitBox.x + hitBox.w/2 && cherryPow.x > hitBox.x - hitBox.w/2 && cherryPow.y < hitBox.y + hitBox.h/2 && cherryPow.y > hitBox.y - hitBox.h/2){
+                cherryPowUp = 1;
+                if(!cherryPow.collected){
+                sundae = 50;
+                cherryPow.collected = 1;}
+                
+            }
+            if(newLife.x < hitBox.x + hitBox.w/2 && newLife.x > hitBox.x - hitBox.w/2 && newLife.y < hitBox.y + hitBox.h/2 && newLife.y > hitBox.y - hitBox.h/2){
+                trucks[0].lives ++;
+                newLife.collected = 1;
+            }
+            
+            
+            if(keys[UP]&&!lost){
                 trucks[0].moveUp();
             }
-            if(keys[RIGHT]){
+            if(keys[RIGHT]&&!lost){
                 trucks[0].moveRight();
             }
-            if(keys[LEFT]){
+            if(keys[LEFT]&&!lost){
                 trucks[0].moveLeft();
             }
-            if(keys[DOWN]){
+            if(keys[DOWN]&&!lost){
                 trucks[0].moveDown();   
             }
             //Delete the first half of the following statement for continuous bullets 
@@ -1405,20 +2052,32 @@ draw = function() {
                 }
                 FrameCount = 0;
             }
+            
+            if(cloudStart){
+                cloud();
+            }
             scale(-0.5,0.5);
             trucks[0].display();
             popMatrix();
             hitBox.collisions();
+            fill(255, 255, 255);
+            if(trucks[0].lives >=0){
             text(trucks[0].lives, 20,380);
+            }
+            //f = createFont("fantasy", 40);
+            //textFont(f);
+            //text(pikachuEnemy.curHp, 200,380);
+            //text(pikachuEnemy.starthp, 300,380);
             break;
         
         //Instructions case
         case 'instructions':
             background(255, 255, 255);
             fill(0, 0, 0);
-            f = createFont("Sans-Serif-Bold", 20);
-            textFont(f);
-            text('-Instructions (press enter to return) \n \n \t use the arrow keys to fly the ice cream truck. \n \t defeat the giant pikachu by popping \n \t the balloons with your sprinkles. \n \n \t watch out for the pikachu\'s attacks!', 5, 25);
+            //f = createFont("fantasy", 20);
+            //textFont(f);
+            textSize(18);
+            text('Instructions (press enter to return) \n \n \t Use the arrow keys to fly the ice cream truck. \n \t Defeat the giant pikachu by popping \n \t the balloons with your sprinkles. \n \n \t Watch out for the pikachu\'s attacks!  \n\n\t Press the space bar to shoot sprinkles, and use \n\t \'c\' to toggle auto firing. Press \'p\' to pause. \n\n\t Collect extra ice cream cones to gain lives, and \n\t collect the banana and cherry to activate \n\t SUNDAE MODE!! In sundae mode, press \'x\' to \n\t become invincible for a short time! \n\n\t Now go save the city!', 5, 25);
             if((keys[ENTER] || keys[RETURN]) && !enterStill){
                 if(!playing){
                     enterStill = 1;
@@ -1427,7 +2086,7 @@ draw = function() {
                 else{
                     enterStill = 1;
                     myTimer.play();
-                    GameState = 'play';
+                    GameState = 'pause';
                 }
             }
             break;
@@ -1445,7 +2104,10 @@ keyPressed = function() {
 keyReleased = function() {
     keys[keyCode] = 0;
     keys[key] = 0;
+    CPressed = 0;
 };
+
+
 
 
 
