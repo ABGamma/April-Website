@@ -1251,7 +1251,7 @@ truckHitBox.prototype.collisions = function(){
             }
         }
         if(trucks[0].lives < 1 && playing === 1){
-            
+            textSize(40);
             text("You Lost!", 200, 200);
             endGameCounter++;
             lost = 1;
@@ -1333,6 +1333,7 @@ bullet.prototype.collision = function(){
         this.vis = 0;
         if(pikachuEnemy.curHp <= 0 && !lost){
             playing = 0;
+            textSize(40);
             text("You Won!", 200, 200);
             endGameCounter++;
             if(endGameCounter > 200){
@@ -2063,7 +2064,8 @@ draw = function() {
             hitBox.collisions();
             fill(255, 255, 255);
             if(trucks[0].lives >=0){
-            text(trucks[0].lives, 20,380);
+                textSize(40);
+                text(trucks[0].lives, 20,380);
             }
             //f = createFont("fantasy", 40);
             //textFont(f);
