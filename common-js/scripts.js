@@ -132,7 +132,7 @@ function enableLineProgress(){
 			strokeWidth: 1,
 			easing: 'easeInOut',
 			duration: 1400,
-			color: '#FEAE01',
+			color: '#FF8C69',
 			trailColor: '#eee',
 			trailWidth: 1,
 			svgStyle: {width: '100%', height: '100%'},
@@ -141,7 +141,7 @@ function enableLineProgress(){
 					
 				},
 			},
-			from: {color: '#FFEA82'},
+			from: {color: '#FF8C69'},
 			to: {color: '#ED6A5A'},
 			step: (state, bar) => {
 				bar.setText(Math.round(bar.value() * 100) + ' %');
